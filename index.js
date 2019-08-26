@@ -21,31 +21,41 @@ var httpServer = createServer(function (req, res) {
     var trimedPath = pathname.replace(/^\/+|\/+$/g, "");
     //get the query string from the url
     var queryString = parsedurl.query;
-    console.log('this is the query string',trimedPath)
+    console.log('this is the query string', trimedPath)
     //get headers from request
     var headers = req.headers;
     //get http methods
     var method = req.method.toLowerCase();
-    
-    var decoder = new stringDecoder('utf-8');
-    var buffer = "";
-    req.on('data', function (datachunk) {
-        buffer += decoder.write(datachunk);
-    }).on('end', function () {
-        decoder.end();
-        let obj = JSON.parse(buffer);
-        console.log('this is the date', date)
-        user = new User({ id: 0, name: obj.name, sex: obj.sex, age: obj.age, accountNo: obj.accountNo, datecreated: date })
-        console.log(user)
-        var data = {
-            trimedPath: trimedPath,
-            query: queryString,
-            method: method,
-            headers: headers,
-            payload: JSON.parse(buffer)
-        };
+ 
+    console.log(method)
 
-        if (method == 'post') {
+    if(method == 'post') {
+        var decoder = new stringDecoder('utf-8');
+        var buffer = "";
+        req.on('data', function (datachunk) {
+            buffer += decoder.write(datachunk);
+        }).on('end', function () {
+            decoder.end();
+            var data = {
+                trimedPath: trimedPath,
+                query: queryString,
+                method: method,
+                headers: headers,
+                payload: JSON.parse(buffer)
+            };
+            let obj = JSON.parse(buffer);
+            console.log('this is the date', date)
+            user = new User({ id: 0, name: obj.name, sex: obj.sex, age: obj.age, accountNo: obj.accountNo, datecreated: date })
+            console.log(user)
+            // var data = {
+            //     trimedPath: trimedPath,
+            //     query: queryString,
+            //     method: method,
+            //     headers: headers,
+            //     payload: JSON.parse(buffer)
+            // };
+
+
             datahelp.create('users', "users", user, function (err) {
 
                 if (err) {
@@ -54,29 +64,38 @@ var httpServer = createServer(function (req, res) {
                 }
                 console.log("file creation", err);
             });
-        }
-
-        if(method == 'get') {
-
-        }
 
 
-        console.log("trimed path", trimedPath);
-        var chosenhandler = typeof (router[trimedPath]) !== 'undefined' ? router[trimedPath] :
-            handler.notFound;
 
-        chosenhandler(data, function (statuscode, payload) {
-            var payloadString = JSON.stringify(payload);
-            statuscode = typeof (statuscode) == 'number' ? statuscode : 200;
-            res.setHeader("Content-Type", "application/json");
-            res.writeHead(statuscode)
-            res.end(payloadString);
-            console.log("end response" + " trimed path " + statuscode, payload);
 
+            console.log("trimed path", trimedPath);
+            var chosenhandler = typeof (router[trimedPath]) !== 'undefined' ? router[trimedPath] :
+                handler.notFound;
+
+            chosenhandler(data, function (statuscode, payload) {
+                var payloadString = JSON.stringify(payload);
+                statuscode = typeof (statuscode) == 'number' ? statuscode : 200;
+                res.setHeader("Content-Type", "application/json");
+                res.writeHead(statuscode)
+                res.end(payloadString);
+                console.log("end response" + " trimed path " + statuscode, payload);
+
+            })
         })
-    })
+    }
+
+    if (method == 'get') {
+        // ([0-9]+)
+    
+        let id = trimedPath.match(/([0-9]+)/gi);
+        console.log(String(id))
+        datahelp.read('users', "users", String(id), ans =>  req.end(res.end(ans)))
+
+    }
 
 })
+
+
 
 var handler = {};
 
